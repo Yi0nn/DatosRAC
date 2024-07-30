@@ -17,7 +17,7 @@ app.use(cors());
 
 // Ruta para la raíz
 app.get('/', (req, res) => {
-  res.send('El servidor está funcionando correctamente');
+  res.send('El servidor está funcionando correctamente'); 
 });
 
 // Ruta para obtener datos de Google Sheets
