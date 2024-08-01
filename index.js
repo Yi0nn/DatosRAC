@@ -45,44 +45,48 @@ router.post('/getData', async (req, res) => {
 
 // Ruta para actualizar datos en Google Sheets
 router.post('/updateData', async (req, res) => {
-  try {
-	const { updateData, id, sheetName } = req.body;
-	const spreadsheetId = '1s38PjrQ-T0YwAduJwQXDWbVtuIuJIa48C4XtqpdkkdQ';
+	try {
+	  const { id, updateData, sheetName } = req.body;
+	  console.log('Datos recibidos:', req.body);
+	  const spreadsheetId = '1s38PjrQ-T0YwAduJwQXDWbVtuIuJIa48C4XtqpdkkdQ';
 	const range = `${sheetName}!A1:Z1000`;
 	const sheets = google.sheets({ version: 'v4', auth: jwtClient });
 
-	const responseSheet = await sheets.spreadsheets.values.get({
-  	spreadsheetId,
-  	range,
-	});
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+    });
 
-	const currentValues = responseSheet.data.values;
-	const rowIndex = currentValues.findIndex(row => row[0] == id);
+    const currentValues = responseSheet.data.values;
+    const rowIndex = currentValues.findIndex(row => row[0] == id);
 
-	if (rowIndex === -1) {
-  	return res.status(404).json({ error: 'ID no encontrado', status: false });
-	}
+    if (rowIndex === -1) {
+      return res.status(404).json({ error: 'ID no encontrado', status: false });
+    }
 
+    // Actualiza solo el valor en la columna correspondiente
+    const updatedRow = [...currentValues[rowIndex]];
+    updatedRow[5] = updateData.valor; // Asumiendo que la columna "VALOR" es la sexta columna (índice 5)
 	const updatedRange = `${sheetName}!A${rowIndex + 1}`;
 	const sheetsResponse = await sheets.spreadsheets.values.update({
-  	spreadsheetId,
-  	range: updatedRange,
-  	valueInputOption: 'RAW',
-  	resource: {
-    	values: [updateData],
-  	},
-	});
-
-	if (sheetsResponse.status === 200) {
-  	return res.status(200).json({ success: 'Se actualizó correctamente', status: true });
-	} else {
-  	return res.status(400).json({ error: 'No se actualizó', status: false });
+		spreadsheetId,
+		range: updatedRange,
+		valueInputOption: 'RAW',
+		resource: {
+		  values: [updatedRow],
+		},
+	  });
+  
+	  if (sheetsResponse.status === 200) {
+		return res.status(200).json({ success: 'Se actualizó correctamente', status: true });
+	  } else {
+		return res.status(400).json({ error: 'No se actualizó', status: false });
+	  }
+	} catch (error) {
+	  console.error('Error en la conexión:', error);
+	  return res.status(400).json({ error: 'Error en la conexión', status: false });
 	}
-  } catch (error) {
-	console.error('Error en la conexión:', error);
-	return res.status(400).json({ error: 'Error en la conexión', status: false });
-  }
-});
+  });
 
 app.use(router);
 
